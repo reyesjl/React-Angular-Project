@@ -1,0 +1,25 @@
+{
+  "name": "server2",
+  "version": "1.0.0",
+  "description": "databases class workshop 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reyesjl/server2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/reyesjl/server2/issues"
+  },
+  "homepage": "https://github.com/reyesjl/server2#readme",
+  "dependencies": {
+    "dateformat": "^3.0.3",
+    "express": "^4.17.1",
+    "pg": "^7.18.2"
+  }
+}
