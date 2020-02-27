@@ -93,7 +93,7 @@ app.get("/list-users", async (req, res) => {
             const template = "SELECT * FROM users";
             const response = await pool.query(template);
             const userlist = response.rows.map(function(item) {
-				return [item.firstname, item.lastname, item.username, item.email];
+				return {firstname: item.firstname, lastname: item.lastname, username: item.username, email: item.email};
             });
             res.json({users: userlist});
         } catch (err) {
@@ -107,12 +107,71 @@ app.get("/list-users", async (req, res) => {
             const response = await pool.query(template);
             
             const userlist = response.rows.map(function(item) {
-				return [item.firstname, item.lastname];
+				return {firstname: item.firstname, lastname: item.lastname};
             });
+            
             res.json({users: userlist});
         } catch (err) {
             console.log(err);
 			res.json({status: "error: listing users (summary) - code[4]"});
+        }
+    }
+});
+
+// create a workshop in the database
+app.post("/add-workshop", async (req, res) => {
+    const title = req.body.title;
+    const date = req.body.date;
+    const location = req.body.location;
+    const maxseats = req.body.maxseats;
+    const instructor = req.body.instructor;
+
+    // handle empty params
+    if (!title || !date || !location || !maxseats || !instructor) {
+        res.json({error: "params not given"});
+    } else {
+        // query database and search for existing username
+        try {
+            const template = "SELECT * FROM workshops WHERE wsname = $1";
+            const response = await pool.query(template, [title]);
+
+            // workshop doesnt yet exist; continue to add
+            if(response.rowCount == 0) {
+                try {
+                    const template = "INSERT INTO workshops (wsname, wsdate, wslocation, wsmaxseats, wsinstructor) VALUES ($1, $2, $3, $4, $5)";
+                    const response = await pool.query(template, [title, date, location, maxseats, instructor]);
+                    res.json({status: "workshop added"});
+                } catch (err) {
+                    console.log(err);
+			        res.json({status: "error: adding wrokshop - code[5]"});
+                }
+            // workshop found in DB; dont add
+            } else {
+                res.json({status: "workshop already in database"});
+            }
+        } catch (err) {
+            console.log(err);
+			res.json({status: "error: searching for workshop - code[6]"});
+        }
+    }
+});
+
+// enroll users into workshops
+app.post("/enroll", async (req, res) => {
+    const title = req.body.title;
+    const date = req.body.date;
+    const location = req.body.location;
+    const username = req.body.username;
+
+    //handle empty params
+    if (!title || !date || !location || !username) {
+        res.json({error: "params not given"});
+    } else {
+        // ensure username exists
+        try {
+            const template = "SELECT * from "
+        } catch (err) {
+            
         }
     }
 });
