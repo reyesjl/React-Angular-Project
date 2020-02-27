@@ -169,9 +169,45 @@ app.post("/enroll", async (req, res) => {
     } else {
         // ensure username exists
         try {
-            const template = "SELECT * from "
+
+            // username doesnt exists check query
+            const  templateUser = "SELECT * FROM users WHERE username = $1"
+            const responseUser = await pool.query(templateUser, [username]);
+
+            // workshop doesnt exist check query
+            const templateWorkshop = "SELECT * FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3";
+            const responseWorkshop = await pool.query(templateWorkshop, [title, date, location]);
+
+            // user already enrolled check query
+            const templateEnrolled = "SELECT * FROM attending where username = (select username from users where username = $1) AND workshopid = (select workshopid from workshops where wsname = $2);"
+            const responseEnrolled = await pool.query(templateEnrolled, [username, title]);
+
+            // seats already full check
+            const templateSeatlimit = "select wsmaxseats from workshops where wsname = $1";
+            const responseSeatlimit = await pool.query(templateSeatlimit, [title]);
+
+            // check available seats 
+            const templateUsersEnrolled = "select count(distinct username) from attending where workshopid = (select workshopid from workshops where wsname = $1)";
+            const responseUsersEnrolled = await pool.query(templateUsersEnrolled, [title]);
+
+            // template for enrolling a new user to workshop
+            const templateEnrollUser = "insert into attending (username, workshopid) values ( (select username from users where username = $1), (select workshopid from workshops where wsname = $2))";
+            const responseEnrollUser = await pool.query(templateEnrollUser, [username, title]);
+
+            if (responseUser.rowCount == 0) {
+                res.json({status: "user not in database"});
+            } else if (responseWorkshop.rowCount == 0) {
+                res.json({status: "workshop does not exists"});
+            } else if (responseEnrolled.rowCount > 0) {
+                res.json({status: "user already enrolled"});
+            } else if (responseUsersEnrolled == responseSeatlimit) {
+                res.json({status: "no seats available"});
+            } else {
+                res.json({status: "user added"});
+            }
         } catch (err) {
-            
+            console.log(err);
+			res.json({status: "error: enrolling user - code[7]"});
         }
     }
 });
