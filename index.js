@@ -187,7 +187,7 @@ app.post("/enroll", async (req, res) => {
             const responseSeatlimit = await pool.query(templateSeatlimit, [title]);
 
             // check available seats 
-            const templateUsersEnrolled = "select count(distinct username) from attending where workshopid = (select workshopid from workshops where wsname = $1)";
+            const templateUsersEnrolled = "select count(distinct username) as enrolled from attending where workshopid = (select workshopid from workshops where wsname = $1)";
             const responseUsersEnrolled = await pool.query(templateUsersEnrolled, [title]);
 
             // template for enrolling a new user to workshop
@@ -200,7 +200,7 @@ app.post("/enroll", async (req, res) => {
                 res.json({status: "workshop does not exists"});
             } else if (responseEnrolled.rowCount > 0) {
                 res.json({status: "user already enrolled"});
-            } else if (responseUsersEnrolled == responseSeatlimit) {
+            } else if (responseUsersEnrolled.fields[0].enrolled == responseSeatlimit.fields[0].wsmaxseats) {
                 res.json({status: "no seats available"});
             } else {
                 res.json({status: "user added"});
