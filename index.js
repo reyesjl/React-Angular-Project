@@ -60,7 +60,7 @@ app.post("/create-user", async (req, res) => {
     }
 });
 
-// delete a user from the database
+// delete a user FROM the database
 app.delete("/delete-user", async (req, res) => {
     const username = req.body.username;
 
@@ -68,7 +68,7 @@ app.delete("/delete-user", async (req, res) => {
     if (!username) {
         res.json({error: "params not given"});
     } else {
-        // delete user from database
+        // delete user FROM database
         try {
             const template = "DELETE FROM users WHERE username = $1";
             const response = await pool.query(template, [username]);
@@ -179,20 +179,16 @@ app.post("/enroll", async (req, res) => {
             const responseWorkshop = await pool.query(templateWorkshop, [title, date, location]);
 
             // user already enrolled check query
-            const templateEnrolled = "SELECT * FROM attending where username = (select username from users where username = $1) AND workshopid = (select workshopid from workshops where wsname = $2);"
+            const templateEnrolled = "SELECT * FROM attending WHERE username = (SELECT username FROM users WHERE username = $1) AND workshopid = (SELECT workshopid FROM workshops WHERE wsname = $2);"
             const responseEnrolled = await pool.query(templateEnrolled, [username, title]);
 
             // seats already full check
-            const templateSeatlimit = "select wsmaxseats from workshops where wsname = $1";
+            const templateSeatlimit = "SELECT wsmaxseats FROM workshops WHERE wsname = $1";
             const responseSeatlimit = await pool.query(templateSeatlimit, [title]);
 
             // check available seats 
-            const templateUsersEnrolled = "select count(distinct username) as enrolled from attending where workshopid = (select workshopid from workshops where wsname = $1)";
+            const templateUsersEnrolled = "SELECT count(distinct username) as enrolled FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1)";
             const responseUsersEnrolled = await pool.query(templateUsersEnrolled, [title]);
-
-            // template for enrolling a new user to workshop
-            const templateEnrollUser = "insert into attending (username, workshopid) values ( (select username from users where username = $1), (select workshopid from workshops where wsname = $2))";
-            const responseEnrollUser = await pool.query(templateEnrollUser, [username, title]);
 
             if (responseUser.rowCount == 0) {
                 res.json({status: "user not in database"});
@@ -200,14 +196,67 @@ app.post("/enroll", async (req, res) => {
                 res.json({status: "workshop does not exists"});
             } else if (responseEnrolled.rowCount > 0) {
                 res.json({status: "user already enrolled"});
-            } else if (responseUsersEnrolled.fields[0].enrolled == responseSeatlimit.fields[0].wsmaxseats) {
+            } else if (responseUsersEnrolled.rows[0].enrolled == responseSeatlimit.rows[0].wsmaxseats) {
                 res.json({status: "no seats available"});
             } else {
+                // template for enrolling a new user to workshop
+                const templateEnrollUser = "insert into attending (username, workshopid) values ( (SELECT username FROM users WHERE username = $1), (SELECT workshopid FROM workshops WHERE wsname = $2))";
+                const responseEnrollUser = await pool.query(templateEnrollUser, [username, title]);
                 res.json({status: "user added"});
             }
         } catch (err) {
             console.log(err);
 			res.json({status: "error: enrolling user - code[7]"});
+        }
+    }
+});
+
+// list all workshops
+app.get("/list-workshops", async (req, res) => {
+    // list all workshops
+    try {
+        const template = "SELECT wsname, wsdate, wslocation FROM workshops";
+        const response = await pool.query(template);
+        const workshopList = response.rows.map(function(item) {
+            return {title: item.wsname, date: dateFormat(item.wsdate, "yyyy-mm-dd"), location: item.wslocation};
+        });
+        res.json({workshops: workshopList});
+    } catch (err) {
+        console.log(err);
+		res.json({status: "error: retreiving workshops - code[8]"});
+    }
+});
+
+// list workshop attendees
+app.get("/attendees", async (req, res) => {
+    const title = req.query.title;
+    const date = req.query.date;
+    const location = req.query.location;
+
+    // check aprameters
+    if (!title || !date || !location) {
+        res.json({error: "params not given"});
+    } else {
+
+        // setup query
+        try {
+            const workshopTemplate = "SELECT * FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3";
+            const workshopResponse = await pool.query(workshopTemplate, [title, date, location]);
+
+            if (workshopResponse.rowCount == 0) {
+                res.json({error: "workshop does not exists"});
+            } else {
+                const attendeesTemplate = "SELECT firstname, lastname FROM users WHERE username = (SELECT username FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3))";
+                const attendingResponse = await pool.query(attendeesTemplate, [title, date, location])
+            
+                const attendeesList = attendingResponse.rows.map(function(item) {
+                    return {firstname: item.firstname, lastname: item.lastname};
+                });
+                res.json({attendees: attendeesList});
+            }
+        } catch (err) {
+            console.log(err);
+            res.json({status: "error: retreiving attendees [9]"});
         }
     }
 });
@@ -225,7 +274,7 @@ app.post("/api", async (req, res) => {
 		// check for duplicate record
 		try {
 			const template = 
-				"SELECT * from attendees where name = $1 AND workshop = $2";
+				"SELECT * FROM attendees WHERE name = $1 AND workshop = $2";
 			const response = await pool.query(template, [name, workshopName]);
 
 			// query DB and see how many rows
