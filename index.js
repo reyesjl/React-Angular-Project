@@ -193,7 +193,7 @@ app.post("/enroll", async (req, res) => {
             if (responseUser.rowCount == 0) {
                 res.json({status: "user not in database"});
             } else if (responseWorkshop.rowCount == 0) {
-                res.json({status: "workshop does not exists"});
+                res.json({status: "workshop does not exist"});
             } else if (responseEnrolled.rowCount > 0) {
                 res.json({status: "user already enrolled"});
             } else if (responseUsersEnrolled.rows[0].enrolled == responseSeatlimit.rows[0].wsmaxseats) {
@@ -244,7 +244,7 @@ app.get("/attendees", async (req, res) => {
             const workshopResponse = await pool.query(workshopTemplate, [title, date, location]);
 
             if (workshopResponse.rowCount == 0) {
-                res.json({error: "workshop does not exists"});
+                res.json({error: "workshop does not exist"});
             } else {
                 const attendeesTemplate = "SELECT firstname, lastname FROM users WHERE username = (SELECT username FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3))";
                 const attendingResponse = await pool.query(attendeesTemplate, [title, date, location])
