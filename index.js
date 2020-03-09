@@ -179,16 +179,16 @@ app.post("/enroll", async (req, res) => {
             const responseWorkshop = await pool.query(templateWorkshop, [title, date, location]);
 
             // user already enrolled check query
-            const templateEnrolled = "SELECT * FROM attending WHERE username = (SELECT username FROM users WHERE username = $1) AND workshopid = (SELECT workshopid FROM workshops WHERE wsname = $2);"
-            const responseEnrolled = await pool.query(templateEnrolled, [username, title]);
+            const templateEnrolled = "SELECT * FROM attending WHERE username = (SELECT username FROM users WHERE username = $1) AND workshopid = (SELECT workshopid FROM workshops WHERE wsname = $2 AND wsdate = $3 AND wslocation = $4);"
+            const responseEnrolled = await pool.query(templateEnrolled, [username, title, date, location]);
 
             // seats already full check
-            const templateSeatlimit = "SELECT wsmaxseats FROM workshops WHERE wsname = $1";
-            const responseSeatlimit = await pool.query(templateSeatlimit, [title]);
+            const templateSeatlimit = "SELECT wsmaxseats FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3";
+            const responseSeatlimit = await pool.query(templateSeatlimit, [title, date, location]);
 
             // check available seats 
-            const templateUsersEnrolled = "SELECT count(distinct username) as enrolled FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1)";
-            const responseUsersEnrolled = await pool.query(templateUsersEnrolled, [title]);
+            const templateUsersEnrolled = "SELECT count(distinct username) as enrolled FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3)";
+            const responseUsersEnrolled = await pool.query(templateUsersEnrolled, [title, date, location]);
 
             if (responseUser.rowCount == 0) {
                 res.json({status: "user not in database"});
