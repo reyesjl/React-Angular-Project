@@ -200,8 +200,8 @@ app.post("/enroll", async (req, res) => {
                 res.json({status: "no seats available"});
             } else {
                 // template for enrolling a new user to workshop
-                const templateEnrollUser = "insert into attending (username, workshopid) values ( (SELECT username FROM users WHERE username = $1), (SELECT workshopid FROM workshops WHERE wsname = $2))";
-                const responseEnrollUser = await pool.query(templateEnrollUser, [username, title]);
+                const templateEnrollUser = "insert into attending (username, workshopid) values ( (SELECT username FROM users WHERE username = $1), (SELECT workshopid FROM workshops WHERE wsname = $2 AND wsdate = $3 AND wslocation = #4))";
+                const responseEnrollUser = await pool.query(templateEnrollUser, [username, title, date, location]);
                 res.json({status: "user added"});
             }
         } catch (err) {
