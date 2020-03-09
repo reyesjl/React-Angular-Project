@@ -246,8 +246,8 @@ app.get("/attendees", async (req, res) => {
             if (workshopResponse.rowCount == 0) {
                 res.json({error: "workshop does not exist"});
             } else {
-                const attendeesTemplate = "SELECT firstname, lastname FROM users WHERE username = (SELECT username FROM attending WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3))";
-                const attendingResponse = await pool.query(attendeesTemplate, [title, date, location])
+                const attendeesTemplate = "SELECT firstname, lastname FROM users JOIN attendees ON users.username = attendees.username WHERE workshopid = (SELECT workshopid FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3))";
+                const attendingResponse = await pool.query(attendeesTemplate, [title, date, location]);
             
                 const attendeesList = attendingResponse.rows.map(function(item) {
                     return {firstname: item.firstname, lastname: item.lastname};
