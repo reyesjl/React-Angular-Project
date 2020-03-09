@@ -132,8 +132,8 @@ app.post("/add-workshop", async (req, res) => {
     } else {
         // query database and search for existing username
         try {
-            const template = "SELECT * FROM workshops WHERE wsname = $1";
-            const response = await pool.query(template, [title]);
+            const template = "SELECT * FROM workshops WHERE wsname = $1 AND wsdate = $2 AND wslocation = $3";
+            const response = await pool.query(template, [title, date, location]);
 
             // workshop doesnt yet exist; continue to add
             if(response.rowCount == 0) {
